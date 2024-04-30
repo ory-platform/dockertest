@@ -228,9 +228,9 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v4
         with:
-          go-version: "1.18"
+          go-version: "1.21"
 
       - name: Test with Docker
         run: go test -v ./...

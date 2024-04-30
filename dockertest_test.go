@@ -76,11 +76,11 @@ func TestMongo(t *testing.T) {
 		if err != nil {
 			return err
 		}
+		defer response.Body.Close()
 
 		if response.StatusCode != http.StatusOK {
 			return fmt.Errorf("could not connect to resource")
 		}
-		defer response.Body.Close()
 
 		return nil
 	})
