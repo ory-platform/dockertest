@@ -45,12 +45,6 @@ To install dockertest, run
 go get -u github.com/ory/dockertest/v3
 ```
 
-or
-
-```
-dep ensure -add github.com/ory/dockertest@v3.x.y
-```
-
 ### Using Dockertest
 
 ```go
