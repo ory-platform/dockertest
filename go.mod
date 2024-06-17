@@ -14,7 +14,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/moby/term v0.5.0
 	github.com/opencontainers/image-spec v1.0.2
-	github.com/opencontainers/runc v1.1.12
+	github.com/opencontainers/runc v1.1.13
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/sys v0.21.0
