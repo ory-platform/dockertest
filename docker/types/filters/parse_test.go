@@ -7,8 +7,8 @@ import (
 	"errors"
 	"testing"
 
-	"gotest.tools/v3/assert"
-	is "gotest.tools/v3/assert/cmp"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestParseArgs(t *testing.T) {
@@ -25,10 +25,10 @@ func TestParseArgs(t *testing.T) {
 
 	for i := range flagArgs {
 		args, err = ParseFlag(flagArgs[i], args)
-		assert.NilError(t, err)
+		require.NoError(t, err)
 	}
-	assert.Check(t, is.Len(args.Get("created"), 1))
-	assert.Check(t, is.Len(args.Get("image.name"), 2))
+	assert.Len(t, args.Get("created"), 1)
+	assert.Len(t, args.Get("image.name"), 2)
 }
 
 func TestParseArgsEdgeCase(t *testing.T) {
@@ -234,7 +234,7 @@ func TestArgsMatch(t *testing.T) {
 	}
 
 	for args, field := range matches {
-		assert.Check(t, args.Match(field, source),
+		assert.Truef(t, args.Match(field, source),
 			"Expected field %s to match %s", field, source)
 	}
 
@@ -258,7 +258,7 @@ func TestArgsMatch(t *testing.T) {
 	}
 
 	for args, field := range differs {
-		assert.Check(t, !args.Match(field, source), "Expected field %s to not match %s", field, source)
+		assert.Falsef(t, args.Match(field, source), "Expected field %s to not match %s", field, source)
 	}
 }
 
