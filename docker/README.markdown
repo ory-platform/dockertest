@@ -99,7 +99,7 @@ See the documentation for more details.
 
 All development commands can be seen in the [Makefile](Makefile).
 
-Commited code must pass:
+Committed code must pass:
 
 - [golint](https://github.com/golang/lint) (with some exceptions, see the
   Makefile).
@@ -110,15 +110,6 @@ Commited code must pass:
 Running `make test` will check all of these. If your editor does not
 automatically call `gofmt -s`, `make fmt` will format all go files in this
 repository.
-
-## Vendoring
-
-go-dockerclient uses [dep](https://github.com/golang/dep/) for vendoring. If
-you're using dep, you should be able to pick go-dockerclient releases and get
-the proper dependencies.
-
-With other vendoring tools, users might need to specify go-dockerclient's
-dependencies manually.
 
 ## Using with Docker 1.9 and Go 1.4
 

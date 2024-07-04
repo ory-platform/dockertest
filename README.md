@@ -45,12 +45,6 @@ To install dockertest, run
 go get -u github.com/ory/dockertest/v3
 ```
 
-or
-
-```
-dep ensure -add github.com/ory/dockertest@v3.x.y
-```
-
 ### Using Dockertest
 
 ```go
@@ -100,14 +94,15 @@ func TestMain(m *testing.M) {
 		log.Fatalf("Could not connect to database: %s", err)
 	}
 
-	code := m.Run()
+	// as of go1.15 testing.M returns the exit code of m.Run(), so it is safe to use defer here
+    defer func() {
+      if err := pool.Purge(resource); err != nil {
+        log.Fatalf("Could not purge resource: %s", err)
+      }
 
-	// You can't defer this because os.Exit doesn't care for defer
-	if err := pool.Purge(resource); err != nil {
-		log.Fatalf("Could not purge resource: %s", err)
-	}
+    }()
 
-	os.Exit(code)
+	m.Run()
 }
 
 func TestSomething(t *testing.T) {
@@ -228,9 +223,9 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v4
         with:
-          go-version: "1.18"
+          go-version: "1.21"
 
       - name: Test with Docker
         run: go test -v ./...
