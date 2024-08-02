@@ -8,7 +8,6 @@
 package docker
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -133,6 +132,7 @@ type ImageHistory struct {
 	Created   int64    `json:"Created,omitempty" yaml:"Created,omitempty" toml:"Tags,omitempty"`
 	CreatedBy string   `json:"CreatedBy,omitempty" yaml:"CreatedBy,omitempty" toml:"CreatedBy,omitempty"`
 	Size      int64    `json:"Size,omitempty" yaml:"Size,omitempty" toml:"Size,omitempty"`
+	Comment   string   `json:"Comment,omitempty" yaml:"Comment,omitempty" toml:"Comment,omitempty"`
 }
 
 // ImageHistory returns the history of the image by its name or ID.
@@ -323,12 +323,15 @@ func (c *Client) PullImage(opts PullImageOptions, auth AuthConfiguration) error 
 		opts.Repository = parts[0]
 		opts.Tag = parts[1]
 	}
-	return c.createImage(queryString(&opts), headers, nil, opts.OutputStream, opts.RawJSONStream, opts.InactivityTimeout, opts.Context)
+	return c.createImage(&opts, headers, nil, opts.OutputStream, opts.RawJSONStream, opts.InactivityTimeout, opts.Context)
 }
 
-func (c *Client) createImage(qs string, headers map[string]string, in io.Reader, w io.Writer, rawJSONStream bool, timeout time.Duration, context context.Context) error {
-	path := "/images/create?" + qs
-	return c.stream("POST", path, streamOptions{
+func (c *Client) createImage(opts interface{}, headers map[string]string, in io.Reader, w io.Writer, rawJSONStream bool, timeout time.Duration, context context.Context) error {
+	url, err := c.getPath("/images/create", opts)
+	if err != nil {
+		return err
+	}
+	return c.streamURL(http.MethodPost, url, streamOptions{
 		setRawTerminal:    true,
 		headers:           headers,
 		in:                in,
@@ -399,7 +402,28 @@ func (c *Client) ExportImages(opts ExportImagesOptions) error {
 	if opts.Names == nil || len(opts.Names) == 0 {
 		return ErrMustSpecifyNames
 	}
-	return c.stream("GET", "/images/get?"+queryString(&opts), streamOptions{
+	// API < 1.25 allows multiple name values
+	// 1.25 says name must be a comma separated list
+	var err error
+	var exporturl string
+	if c.requestedAPIVersion.GreaterThanOrEqualTo(apiVersion125) {
+		str := opts.Names[0]
+		for _, val := range opts.Names[1:] {
+			str += "," + val
+		}
+		exporturl, err = c.getPath("/images/get", ExportImagesOptions{
+			Names:             []string{str},
+			OutputStream:      opts.OutputStream,
+			InactivityTimeout: opts.InactivityTimeout,
+			Context:           opts.Context,
+		})
+	} else {
+		exporturl, err = c.getPath("/images/get", &opts)
+	}
+	if err != nil {
+		return err
+	}
+	return c.streamURL(http.MethodGet, exporturl, streamOptions{
 		setRawTerminal:    true,
 		stdout:            opts.OutputStream,
 		inactivityTimeout: opts.InactivityTimeout,
@@ -440,7 +464,7 @@ func (c *Client) ImportImage(opts ImportImageOptions) error {
 		opts.InputStream = f
 		opts.Source = "-"
 	}
-	return c.createImage(queryString(&opts), nil, opts.InputStream, opts.OutputStream, opts.RawJSONStream, opts.InactivityTimeout, opts.Context)
+	return c.createImage(&opts, nil, opts.InputStream, opts.OutputStream, opts.RawJSONStream, opts.InactivityTimeout, opts.Context)
 }
 
 // BuildImageOptions present the set of informations available for building an
@@ -450,19 +474,20 @@ func (c *Client) ImportImage(opts ImportImageOptions) error {
 // https://goo.gl/4nYHwV.
 type BuildImageOptions struct {
 	Name                string             `qs:"t"`
-	Dockerfile          string             `qs:"dockerfile"`
+	Dockerfile          string             `qs:"dockerfile" ver:"1.25"`
 	NoCache             bool               `qs:"nocache"`
-	CacheFrom           []string           `qs:"-"`
+	CacheFrom           []string           `qs:"-" ver:"1.25"`
 	SuppressOutput      bool               `qs:"q"`
-	Pull                bool               `qs:"pull"`
+	Pull                bool               `qs:"pull" ver:"1.16"`
 	RmTmpContainer      bool               `qs:"rm"`
-	ForceRmTmpContainer bool               `qs:"forcerm"`
+	ForceRmTmpContainer bool               `qs:"forcerm" ver:"1.12"`
 	RawJSONStream       bool               `qs:"-"`
 	Memory              int64              `qs:"memory"`
 	Memswap             int64              `qs:"memswap"`
+	ShmSize             int64              `qs:"shmsize"`
 	CPUShares           int64              `qs:"cpushares"`
-	CPUQuota            int64              `qs:"cpuquota"`
-	CPUPeriod           int64              `qs:"cpuperiod"`
+	CPUQuota            int64              `qs:"cpuquota" ver:"1.21"`
+	CPUPeriod           int64              `qs:"cpuperiod" ver:"1.21"`
 	CPUSetCPUs          string             `qs:"cpusetcpus"`
 	Labels              map[string]string  `qs:"labels"`
 	InputStream         io.Reader          `qs:"-"`
@@ -472,14 +497,16 @@ type BuildImageOptions struct {
 	Auth                AuthConfiguration  `qs:"-"` // for older docker X-Registry-Auth header
 	AuthConfigs         AuthConfigurations `qs:"-"` // for newer docker X-Registry-Config header
 	ContextDir          string             `qs:"-"`
-	Ulimits             []ULimit           `qs:"-"`
-	BuildArgs           []BuildArg         `qs:"-"`
-	NetworkMode         string             `qs:"networkmode"`
+	Ulimits             []ULimit           `qs:"-" ver:"1.18"`
+	BuildArgs           []BuildArg         `qs:"-" ver:"1.21"`
+	NetworkMode         string             `qs:"networkmode" ver:"1.25"`
 	InactivityTimeout   time.Duration      `qs:"-"`
 	CgroupParent        string             `qs:"cgroupparent"`
 	SecurityOpt         []string           `qs:"securityopt"`
 	Target              string             `gs:"target"`
-	Platform            string             `qs:"platform"`
+	Platform            string             `qs:"platform" ver:"1.32"`
+	Outputs             string             `qs:"outputs" ver:"1.40"`
+	ExtraHosts          string             `qs:"extrahosts" ver:"1.28"`
 	Context             context.Context
 }
 
@@ -523,13 +550,16 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 			return err
 		}
 	}
-	qs := queryString(&opts)
+	qs, ver := queryStringVersion(&opts)
 
-	if c.serverAPIVersion.GreaterThanOrEqualTo(apiVersion125) && len(opts.CacheFrom) > 0 {
+	if len(opts.CacheFrom) > 0 {
 		if b, err := json.Marshal(opts.CacheFrom); err == nil {
 			item := url.Values(map[string][]string{})
 			item.Add("cachefrom", string(b))
 			qs = fmt.Sprintf("%s&%s", qs, item.Encode())
+			if ver == nil || apiVersion125.GreaterThan(ver) {
+				ver = apiVersion125
+			}
 		}
 	}
 
@@ -538,6 +568,9 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 			item := url.Values(map[string][]string{})
 			item.Add("ulimits", string(b))
 			qs = fmt.Sprintf("%s&%s", qs, item.Encode())
+			if ver == nil || apiVersion118.GreaterThan(ver) {
+				ver = apiVersion118
+			}
 		}
 	}
 
@@ -550,10 +583,18 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 			item := url.Values(map[string][]string{})
 			item.Add("buildargs", string(b))
 			qs = fmt.Sprintf("%s&%s", qs, item.Encode())
+			if ver == nil || apiVersion121.GreaterThan(ver) {
+				ver = apiVersion121
+			}
 		}
 	}
 
-	return c.stream("POST", fmt.Sprintf("/build?%s", qs), streamOptions{
+	buildURL, err := c.pathVersionCheck("/build", qs, ver)
+	if err != nil {
+		return err
+	}
+
+	return c.streamURL(http.MethodPost, buildURL, streamOptions{
 		setRawTerminal:    true,
 		rawJSONStream:     opts.RawJSONStream,
 		headers:           headers,
@@ -565,7 +606,7 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 	})
 }
 
-func (c *Client) versionedAuthConfigs(authConfigs AuthConfigurations) interface{} {
+func (c *Client) versionedAuthConfigs(authConfigs AuthConfigurations) registryAuth {
 	if c.serverAPIVersion == nil {
 		c.checkAPIVersion()
 	}
@@ -617,24 +658,18 @@ func isURL(u string) bool {
 	return p.Scheme == "http" || p.Scheme == "https"
 }
 
-func headersWithAuth(auths ...interface{}) (map[string]string, error) {
+func headersWithAuth(auths ...registryAuth) (map[string]string, error) {
 	var headers = make(map[string]string)
 
 	for _, auth := range auths {
-		switch auth.(type) {
-		case AuthConfiguration:
-			var buf bytes.Buffer
-			if err := json.NewEncoder(&buf).Encode(auth); err != nil {
-				return nil, err
-			}
-			headers["X-Registry-Auth"] = base64.URLEncoding.EncodeToString(buf.Bytes())
-		case AuthConfigurations, AuthConfigurations119:
-			var buf bytes.Buffer
-			if err := json.NewEncoder(&buf).Encode(auth); err != nil {
-				return nil, err
-			}
-			headers["X-Registry-Config"] = base64.URLEncoding.EncodeToString(buf.Bytes())
+		if auth.isEmpty() {
+			continue
 		}
+		data, err := json.Marshal(auth)
+		if err != nil {
+			return nil, err
+		}
+		headers[auth.headerKey()] = base64.URLEncoding.EncodeToString(data)
 	}
 
 	return headers, nil
