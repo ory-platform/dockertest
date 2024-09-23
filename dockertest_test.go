@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"strconv"
@@ -489,4 +490,29 @@ func TestExecStatus(t *testing.T) {
 	exitCode, err = resource.Exec([]string{"/bin/sh", "-c", "/bin/sleep 2 && exit 42"}, dockertest.ExecOptions{})
 	require.NoError(t, err)
 	require.Equal(t, 42, exitCode)
+}
+
+func TestOutboundIPPortBinding(t *testing.T) {
+	outboundIP := func() string {
+		conn, err := net.Dial("udp", "8.8.8.8:80")
+		require.NoError(t, err)
+		defer conn.Close()
+		localAddr := conn.LocalAddr().(*net.UDPAddr)
+		return localAddr.IP.String()
+	}()
+	resource, err := pool.RunWithOptions(
+		&dockertest.RunOptions{
+			Repository: "postgres",
+			Tag:        "9.5",
+			Env:        []string{"POSTGRES_PASSWORD=secret"},
+			PortBindings: map[dc.Port][]dc.PortBinding{
+				"5432/tcp": {{HostIP: outboundIP, HostPort: "0"}},
+			},
+		})
+	require.NoError(t, err)
+	mappedPort := resource.GetPort("5432/tcp")
+	require.NotEmpty(t, mappedPort)
+	boundIP := resource.GetBoundIP("5432/tcp")
+	require.Equal(t, outboundIP, boundIP)
+	require.NoError(t, pool.Purge(resource))
 }
