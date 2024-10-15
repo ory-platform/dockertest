@@ -473,7 +473,7 @@ func (d *Pool) RunWithOptions(opts *RunOptions, hcOpts ...func(*dc.HostConfig)) 
 		return nil, err
 	}
 
-	c, err = d.inspectContainerWithRetries(c.ID, 0)
+	c, err = d.inspectContainerWithRetries(c.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -492,23 +492,34 @@ func (d *Pool) RunWithOptions(opts *RunOptions, hcOpts ...func(*dc.HostConfig)) 
 }
 
 // inspectContainerWithRetries will repeat the inspect call until the container has port bindings assigned.
-func (d *Pool) inspectContainerWithRetries(id string, retry int) (*dc.Container, error) {
-	c, err := d.Client.InspectContainer(id)
-	if err != nil {
-		return nil, err
-	}
+func (d *Pool) inspectContainerWithRetries(id string) (*dc.Container, error) {
 	const maxRetries = 10
-	if retry > maxRetries {
-		return c, nil
-	}
-	// wait for port bindings to be assigned
-	for _, bindings := range c.NetworkSettings.Ports {
-		if len(bindings) == 0 {
+	var (
+		retryNum int
+		c        *dc.Container
+		err      error
+	)
+	for retryNum <= maxRetries {
+		if retryNum > 0 {
 			time.Sleep(100 * time.Millisecond)
-			return d.inspectContainerWithRetries(id, retry+1)
 		}
+		c, err = d.Client.InspectContainer(id)
+		if err != nil {
+			return nil, err
+		}
+		if hasEmptyPortBindings := func() bool {
+			for _, bindings := range c.NetworkSettings.Ports {
+				if len(bindings) == 0 {
+					return true
+				}
+			}
+			return false
+		}(); !hasEmptyPortBindings {
+			return c, nil
+		}
+		retryNum++
 	}
-	return c, nil
+	return c, err
 }
 
 // Run starts a docker container.
