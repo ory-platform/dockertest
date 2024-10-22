@@ -1,4 +1,4 @@
-// Copyright © 2022 Ory Corp
+// Copyright © 2024 Ory Corp
 // SPDX-License-Identifier: Apache-2.0
 
 //go:build linux || freebsd
@@ -8,7 +8,6 @@ package fileutils // import "github.com/ory/dockertest/v3/docker/pkg/fileutils"
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/sirupsen/logrus"
@@ -17,7 +16,7 @@ import (
 // GetTotalUsedFds Returns the number of used File Descriptors by
 // reading it via /proc filesystem.
 func GetTotalUsedFds() int {
-	if fds, err := ioutil.ReadDir(fmt.Sprintf("/proc/%d/fd", os.Getpid())); err != nil {
+	if fds, err := os.ReadDir(fmt.Sprintf("/proc/%d/fd", os.Getpid())); err != nil {
 		logrus.Errorf("Error opening /proc/%d/fd: %s", os.Getpid(), err)
 	} else {
 		return len(fds)

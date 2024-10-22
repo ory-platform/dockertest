@@ -1,4 +1,4 @@
-// Copyright © 2022 Ory Corp
+// Copyright © 2024 Ory Corp
 // SPDX-License-Identifier: Apache-2.0
 
 package opts
@@ -12,7 +12,6 @@ import (
 
 	"github.com/docker/cli/cli/compose/loader"
 	units "github.com/docker/go-units"
-	"github.com/pkg/errors"
 )
 
 var (
@@ -345,7 +344,7 @@ func (m *MemBytes) UnmarshalJSON(s []byte) error {
 func MountParser(mount string) (source, destination string, err error) {
 	spec, err := loader.ParseVolume(mount)
 	if err != nil {
-		return "", "", errors.Wrap(err, "Failed to parse mount")
+		return "", "", fmt.Errorf("Failed to parse mount: %w", err)
 	}
 
 	return spec.Source, spec.Target, nil

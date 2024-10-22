@@ -45,12 +45,6 @@ To install dockertest, run
 go get -u github.com/ory/dockertest/v3
 ```
 
-or
-
-```
-dep ensure -add github.com/ory/dockertest@v3.x.y
-```
-
 ### Using Dockertest
 
 ```go
@@ -100,14 +94,15 @@ func TestMain(m *testing.M) {
 		log.Fatalf("Could not connect to database: %s", err)
 	}
 
-	code := m.Run()
+	// as of go1.15 testing.M returns the exit code of m.Run(), so it is safe to use defer here
+    defer func() {
+      if err := pool.Purge(resource); err != nil {
+        log.Fatalf("Could not purge resource: %s", err)
+      }
 
-	// You can't defer this because os.Exit doesn't care for defer
-	if err := pool.Purge(resource); err != nil {
-		log.Fatalf("Could not purge resource: %s", err)
-	}
+    }()
 
-	os.Exit(code)
+	m.Run()
 }
 
 func TestSomething(t *testing.T) {
@@ -207,6 +202,34 @@ gitlab-runner register -n \
 You only need to instruct docker dind to start with disabled tls.  
 Add variable `DOCKER_TLS_CERTDIR: ""` to `gitlab-ci.yml` above. It will tell
 docker daemon to start on 2375 port over http.
+
+## Running Dockertest Using GitHub Actions
+
+```yaml
+name: Test with Docker
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      dind:
+        image: docker:23.0-rc-dind-rootless
+        ports:
+          - 2375:2375
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.21"
+
+      - name: Test with Docker
+        run: go test -v ./...
+```
 
 ### How to run dockertest with remote Docker
 

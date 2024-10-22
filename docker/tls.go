@@ -1,4 +1,4 @@
-// Copyright © 2022 Ory Corp
+// Copyright © 2024 Ory Corp
 // SPDX-License-Identifier: Apache-2.0
 
 // Copyright 2014 go-dockerclient authors. All rights reserved.
@@ -41,7 +41,7 @@ func tlsDialWithDialer(dialer *net.Dialer, network, addr string, config *tls.Con
 	timeout := dialer.Timeout
 
 	if !dialer.Deadline.IsZero() {
-		deadlineTimeout := dialer.Deadline.Sub(time.Now())
+		deadlineTimeout := time.Until(dialer.Deadline)
 		if timeout == 0 || deadlineTimeout < timeout {
 			timeout = deadlineTimeout
 		}

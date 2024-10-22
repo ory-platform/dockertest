@@ -1,4 +1,4 @@
-// Copyright © 2022 Ory Corp
+// Copyright © 2024 Ory Corp
 // SPDX-License-Identifier: Apache-2.0
 
 package system // import "github.com/ory/dockertest/v3/docker/pkg/system"
@@ -11,7 +11,7 @@ func fromStatT(s *syscall.Stat_t) (*StatT, error) {
 		mode: s.Mode,
 		uid:  s.Uid,
 		gid:  s.Gid,
-		rdev: s.Rdev,
+		rdev: uint64(s.Rdev),
 		mtim: s.Mtim}, nil
 }
 

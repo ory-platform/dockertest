@@ -1,4 +1,4 @@
-// Copyright © 2022 Ory Corp
+// Copyright © 2024 Ory Corp
 // SPDX-License-Identifier: Apache-2.0
 
 package archive // import "github.com/ory/dockertest/v3/docker/pkg/archive"
@@ -12,7 +12,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -1236,7 +1235,7 @@ func cmdStream(cmd *exec.Cmd, input io.Reader) (io.ReadCloser, error) {
 // of that file as an archive. The archive can only be read once - as soon as reading completes,
 // the file will be deleted.
 func NewTempArchive(src io.Reader, dir string) (*TempArchive, error) {
-	f, err := ioutil.TempFile(dir, "")
+	f, err := os.CreateTemp(dir, "")
 	if err != nil {
 		return nil, err
 	}

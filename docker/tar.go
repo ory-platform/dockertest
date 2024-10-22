@@ -1,4 +1,4 @@
-// Copyright © 2022 Ory Corp
+// Copyright © 2024 Ory Corp
 // SPDX-License-Identifier: Apache-2.0
 
 // Copyright 2014 go-dockerclient authors. All rights reserved.
@@ -10,7 +10,6 @@ package docker
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -115,7 +114,7 @@ func validateContextDirectory(srcPath string, excludes []string) error {
 
 func parseDockerignore(root string) ([]string, error) {
 	var excludes []string
-	ignore, err := ioutil.ReadFile(path.Join(root, ".dockerignore"))
+	ignore, err := os.ReadFile(path.Join(root, ".dockerignore"))
 	if err != nil && !os.IsNotExist(err) {
 		return excludes, fmt.Errorf("error reading .dockerignore: '%s'", err)
 	}

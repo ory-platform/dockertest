@@ -1,4 +1,4 @@
-// Copyright © 2022 Ory Corp
+// Copyright © 2024 Ory Corp
 // SPDX-License-Identifier: Apache-2.0
 
 package archive // import "github.com/ory/dockertest/v3/docker/pkg/archive"
@@ -7,7 +7,6 @@ import (
 	"archive/tar"
 	"errors"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -264,7 +263,7 @@ func PrepareArchiveCopy(srcContent io.Reader, srcInfo, dstInfo CopyInfo) (dstDir
 		// The destination exists as a directory. No alteration
 		// to srcContent is needed as its contents can be
 		// simply extracted to the destination directory.
-		return dstInfo.Path, ioutil.NopCloser(srcContent), nil
+		return dstInfo.Path, io.NopCloser(srcContent), nil
 	case dstInfo.Exists && srcInfo.IsDir:
 		// The destination exists as some type of file and the source
 		// content is a directory. This is an error condition since
