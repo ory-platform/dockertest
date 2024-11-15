@@ -331,6 +331,7 @@ type BuildOptions struct {
 	ContextDir string
 	BuildArgs  []dc.BuildArg
 	Platform   string
+	Auth       dc.AuthConfigurations
 }
 
 // BuildAndRunWithBuildOptions builds and starts a docker container.
@@ -343,6 +344,7 @@ func (d *Pool) BuildAndRunWithBuildOptions(buildOpts *BuildOptions, runOpts *Run
 		ContextDir:   buildOpts.ContextDir,
 		BuildArgs:    buildOpts.BuildArgs,
 		Platform:     buildOpts.Platform,
+		AuthConfigs:  buildOpts.Auth,
 	})
 
 	if err != nil {
@@ -421,11 +423,23 @@ func (d *Pool) RunWithOptions(opts *RunOptions, hcOpts ...func(*dc.HostConfig)) 
 
 	_, err := d.Client.InspectImage(fmt.Sprintf("%s:%s", repository, tag))
 	if err != nil {
+		var (
+			auth  = opts.Auth
+			parts = strings.SplitN(repository, "/", 3)
+			empty = opts.Auth == dc.AuthConfiguration{}
+		)
+		if empty && len(parts) == 3 {
+			res, err := dc.NewAuthConfigurationsFromCredsHelpers(parts[0])
+			if err == nil {
+				auth = *res
+			}
+		}
+
 		if err := d.Client.PullImage(dc.PullImageOptions{
 			Repository: repository,
 			Tag:        tag,
 			Platform:   opts.Platform,
-		}, opts.Auth); err != nil {
+		}, auth); err != nil {
 			return nil, err
 		}
 	}
