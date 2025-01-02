@@ -504,7 +504,6 @@ type BuildImageOptions struct {
 	CgroupParent        string             `qs:"cgroupparent"`
 	SecurityOpt         []string           `qs:"securityopt"`
 	Target              string             `gs:"target"`
-	Platform            string             `qs:"platform"`
 	Version             string             `qs:"version"`
 	Platform            string             `qs:"platform" ver:"1.32"`
 	Outputs             string             `qs:"outputs" ver:"1.40"`
