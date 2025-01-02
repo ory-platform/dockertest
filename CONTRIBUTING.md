@@ -67,7 +67,7 @@ or the [Ory Chat](https://www.ory.sh/chat).
   [a Contributors License Agreement?](https://cla-assistant.io/ory/dockertest)
 
 - I would like updates about new versions of Ory Dockertest.
-  [How are new releases announced?](https://ory.us10.list-manage.com/subscribe?u=ffb1a878e4ec6c0ed312a3480&id=f605a41b53)
+  [How are new releases announced?](https://www.ory.sh/l/sign-up-newsletter)
 
 ## How can I contribute?
 
@@ -147,7 +147,9 @@ checklist to contribute an example:
 1. Add a descriptive prefix to commits. This ensures a uniform commit history
    and helps structure the changelog. Please refer to this
    [Convential Commits configuration](https://github.com/ory/dockertest/blob/master/.github/workflows/conventional_commits.yml)
-   for the list of accepted prefixes. You can read more about the Conventional Commit specification [at their site](https://www.conventionalcommits.org/en/v1.0.0/).
+   for the list of accepted prefixes. You can read more about the Conventional
+   Commit specification
+   [at their site](https://www.conventionalcommits.org/en/v1.0.0/).
 1. Create a `README.md` that explains how to use the example. (Use
    [the README template](https://github.com/ory/examples/blob/master/_common/README.md)).
 1. Open a pull request and maintainers will review and merge your example.
@@ -175,7 +177,9 @@ request, go through this checklist:
 1. Add a descriptive prefix to commits. This ensures a uniform commit history
    and helps structure the changelog. Please refer to this
    [Convential Commits configuration](https://github.com/ory/dockertest/blob/master/.github/workflows/conventional_commits.yml)
-   for the list of accepted prefixes. You can read more about the Conventional Commit specification [at their site](https://www.conventionalcommits.org/en/v1.0.0/).
+   for the list of accepted prefixes. You can read more about the Conventional
+   Commit specification
+   [at their site](https://www.conventionalcommits.org/en/v1.0.0/).
 
 If a pull request is not ready to be reviewed yet
 [it should be marked as a "Draft"](https://docs.github.com/en/github/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/changing-the-stage-of-a-pull-request).

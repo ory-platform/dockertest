@@ -1,4 +1,4 @@
-// Copyright © 2023 Ory Corp
+// Copyright © 2024 Ory Corp
 // SPDX-License-Identifier: Apache-2.0
 
 package system // import "github.com/ory/dockertest/v3/docker/pkg/system"
@@ -264,7 +264,7 @@ func nextSuffix() string {
 	return strconv.Itoa(int(1e9 + r%1e9))[1:]
 }
 
-// TempFileSequential is a copy of ioutil.TempFile, modified to use sequential
+// TempFileSequential is a copy of os.CreateTemp, modified to use sequential
 // file access. Below is the original comment from golang:
 // TempFile creates a new temporary file in the directory dir
 // with a name beginning with prefix, opens the file for reading
