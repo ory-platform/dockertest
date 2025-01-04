@@ -3,7 +3,7 @@
 
 name: Conventional commits
 
-# This GitHub CI Action enforces that pull request titles follow conventional commits.
+# This GitHub CI Action enforces that pull request titles follow conventional commits.aa
 # More info at https://www.conventionalcommits.org.
 #
 # The Ory-wide defaults for commit titles and scopes are below.
